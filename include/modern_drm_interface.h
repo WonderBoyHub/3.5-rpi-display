@@ -3,13 +3,32 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+
+// Conditional includes based on library availability
+#ifdef HAVE_LIBDRM
 #include <drm/drm.h>
 #include <drm/drm_mode.h>
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#endif
+
+#ifdef HAVE_GBM
 #include <gbm.h>
+#endif
+
+#ifdef HAVE_EGL
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
+#else
+// Define EGL types as void* when EGL is not available
+typedef void* EGLDisplay;
+typedef void* EGLContext;
+typedef void* EGLSurface;
+typedef void* EGLConfig;
+#define EGL_NO_DISPLAY ((EGLDisplay)0)
+#define EGL_NO_CONTEXT ((EGLContext)0)
+#define EGL_NO_SURFACE ((EGLSurface)0)
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,18 +37,33 @@ extern "C" {
 // Modern DRM/KMS interface for Pi displays
 typedef struct {
     int drm_fd;
+#ifdef HAVE_LIBDRM
     drmModeRes *resources;
     drmModeConnector *connector;
     drmModeEncoder *encoder;
     drmModeCrtc *crtc;
     drmModeModeInfo mode;
+#else
+    void *resources;
+    void *connector;
+    void *encoder;
+    void *crtc;
+    struct { uint32_t hdisplay, vdisplay, vrefresh; } mode;
+#endif
     uint32_t crtc_id;
     uint32_t connector_id;
     uint32_t encoder_id;
     
     // GBM for buffer management
+#ifdef HAVE_GBM
     struct gbm_device *gbm_device;
     struct gbm_surface *gbm_surface;
+    struct gbm_bo *previous_bo;
+#else
+    void *gbm_device;
+    void *gbm_surface;
+    void *previous_bo;
+#endif
     
     // EGL for GPU acceleration
     EGLDisplay egl_display;
@@ -37,8 +71,6 @@ typedef struct {
     EGLSurface egl_surface;
     EGLConfig egl_config;
     
-    // Buffer management
-    struct gbm_bo *previous_bo;
     uint32_t previous_fb;
     
     // Performance tracking

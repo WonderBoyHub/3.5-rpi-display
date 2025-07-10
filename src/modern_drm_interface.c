@@ -14,8 +14,15 @@
 
 #include "modern_drm_interface.h"
 
-#ifndef ENABLE_DRM_KMS
-// Fallback implementation when DRM/KMS is not available
+// Check if we can actually use DRM/EGL - not just if it's enabled
+#if defined(ENABLE_DRM_KMS) && defined(HAVE_LIBDRM) && defined(HAVE_EGL)
+#define CAN_USE_DRM_KMS 1
+#else
+#define CAN_USE_DRM_KMS 0
+#endif
+
+#if !CAN_USE_DRM_KMS
+// Fallback implementation when DRM/KMS is not available or libraries missing
 
 const char* drm_get_error_string(drm_error_t error) {
     return "DRM/KMS support not compiled in";
@@ -135,7 +142,7 @@ int drm_create_wayland_surface(drm_context_t *drm_ctx, void *wl_display, void *w
 }
 
 #else
-// Full DRM/KMS implementation
+// Full DRM/KMS implementation (libraries available)
 
 // GPU vendor IDs for hardware detection
 #define BROADCOM_VENDOR_ID 0x14E4
@@ -767,4 +774,4 @@ int drm_create_wayland_surface(drm_context_t *drm_ctx, void *wl_display, void *w
     return DRM_ERROR_GPU_INIT;
 }
 
-#endif // ENABLE_DRM_KMS 
+#endif // CAN_USE_DRM_KMS 

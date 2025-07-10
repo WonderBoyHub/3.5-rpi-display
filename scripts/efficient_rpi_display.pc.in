@@ -1,0 +1,15 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${exec_prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: efficient_rpi_display
+Description: Efficient 3.5" RPi Display Driver with ILI9486L controller and XPT2046 touch
+Version: @PROJECT_VERSION@
+URL: https://github.com/efficient-rpi-display/efficient-rpi-display
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir} -lefficient_rpi_display
+Libs.private: -lm -lrt -lpthread
+Cflags: -I${includedir}/efficient_rpi_display 

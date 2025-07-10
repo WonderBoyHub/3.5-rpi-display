@@ -1,0 +1,157 @@
+/dts-v1/;
+/plugin/;
+
+/ {
+    compatible = "brcm,bcm2835";
+    
+    fragment@0 {
+        target = <&spi0>;
+        __overlay__ {
+            status = "okay";
+            
+            spidev@0 {
+                status = "disabled";
+            };
+            
+            spidev@1 {
+                status = "disabled";
+            };
+            
+            ili9486l: ili9486l@0 {
+                compatible = "ilitek,ili9486l";
+                reg = <0>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&ili9486l_pins>;
+                
+                spi-max-frequency = <80000000>;
+                spi-cpol;
+                spi-cpha;
+                
+                rotate = <0>;
+                bgr;
+                fps = <60>;
+                buswidth = <8>;
+                
+                reset-gpios = <&gpio 25 1>;
+                dc-gpios = <&gpio 24 0>;
+                led-gpios = <&gpio 18 0>;
+                
+                width = <320>;
+                height = <480>;
+                
+                gamma = "04 1F 4A 0A 0E 09 54 A8 46 0F 17 09 0F 07 0B",
+                        "04 1C 49 07 0D 14 5A 28 47 0E 1C 06 0D 08 0F";
+                
+                init = <0x01000011>, /* Sleep out */
+                       <0x02000078>, /* Delay 120ms */
+                       <0x010000B6>, /* Display Function Control */
+                       <0x01000002>,
+                       <0x01000002>,
+                       <0x0100003B>,
+                       <0x010000C0>, /* Power Control 1 */
+                       <0x0100000F>,
+                       <0x0100000F>,
+                       <0x010000C1>, /* Power Control 2 */
+                       <0x01000041>,
+                       <0x010000C5>, /* VCOM Control 1 */
+                       <0x01000000>,
+                       <0x01000035>,
+                       <0x01000080>,
+                       <0x010000C7>, /* VCOM Control 2 */
+                       <0x01000000>,
+                       <0x0100003A>, /* Interface Pixel Format */
+                       <0x01000055>,
+                       <0x010000B1>, /* Frame Rate Control */
+                       <0x01000000>,
+                       <0x0100001B>,
+                       <0x01000029>, /* Display On */
+                       <0x02000064>; /* Delay 100ms */
+            };
+            
+            xpt2046: xpt2046@1 {
+                compatible = "ti,ads7846";
+                reg = <1>;
+                pinctrl-names = "default";
+                pinctrl-0 = <&xpt2046_pins>;
+                
+                spi-max-frequency = <2000000>;
+                interrupts = <17 2>; /* GPIO17, falling edge */
+                interrupt-parent = <&gpio>;
+                pendown-gpio = <&gpio 17 0>;
+                ti,x-plate-ohms = <60>;
+                ti,pressure-max = <255>;
+                
+                ti,x-min = /bits/ 16 <200>;
+                ti,x-max = /bits/ 16 <3900>;
+                ti,y-min = /bits/ 16 <200>;
+                ti,y-max = /bits/ 16 <3900>;
+                ti,swap-xy;
+                ti,keep-vref-on;
+                
+                wakeup-source;
+            };
+        };
+    };
+    
+    fragment@1 {
+        target = <&gpio>;
+        __overlay__ {
+            ili9486l_pins: ili9486l_pins {
+                brcm,pins = <24 25 18>;
+                brcm,function = <1 1 1>; /* output */
+                brcm,pull = <0 0 0>; /* no pull */
+            };
+            
+            xpt2046_pins: xpt2046_pins {
+                brcm,pins = <17>;
+                brcm,function = <0>; /* input */
+                brcm,pull = <2>; /* pull up */
+            };
+        };
+    };
+    
+    fragment@2 {
+        target-path = "/";
+        __overlay__ {
+            backlight: backlight {
+                compatible = "gpio-backlight";
+                gpios = <&gpio 18 0>;
+                default-on;
+            };
+        };
+    };
+    
+    fragment@3 {
+        target = <&spi0_cs_pins>;
+        __overlay__ {
+            brcm,pins = <8 7>;
+            brcm,function = <1>; /* output */
+        };
+    };
+    
+    __overrides__ {
+        rotate = <&ili9486l>,"rotate:0";
+        speed = <&ili9486l>,"spi-max-frequency:0";
+        fps = <&ili9486l>,"fps:0";
+        bgr = <&ili9486l>,"bgr?";
+        
+        touch-speed = <&xpt2046>,"spi-max-frequency:0";
+        touch-x-min = <&xpt2046>,"ti,x-min;0";
+        touch-x-max = <&xpt2046>,"ti,x-max;0";
+        touch-y-min = <&xpt2046>,"ti,y-min;0";
+        touch-y-max = <&xpt2046>,"ti,y-max;0";
+        touch-swap-xy = <&xpt2046>,"ti,swap-xy?";
+        touch-invert-x = <&xpt2046>,"ti,invert-x?";
+        touch-invert-y = <&xpt2046>,"ti,invert-y?";
+        
+        reset-pin = <&ili9486l>,"reset-gpios:4",
+                    <&ili9486l_pins>,"brcm,pins:0";
+        dc-pin = <&ili9486l>,"dc-gpios:4",
+                 <&ili9486l_pins>,"brcm,pins:4";
+        led-pin = <&ili9486l>,"led-gpios:4",
+                  <&ili9486l_pins>,"brcm,pins:8";
+        irq-pin = <&xpt2046>,"interrupts:0",
+                  <&xpt2046>,"pendown-gpio:4",
+                  <&xpt2046_pins>,"brcm,pins:0";
+    };
+}; 

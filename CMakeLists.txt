@@ -268,8 +268,12 @@ endif()
 # Testing
 option(BUILD_TESTS "Build test suite" OFF)
 if(BUILD_TESTS)
-    enable_testing()
-    add_subdirectory(test)
+    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test/CMakeLists.txt")
+        enable_testing()
+        add_subdirectory(test)
+    else()
+        message(WARNING "BUILD_TESTS is enabled but test/CMakeLists.txt not found. Skipping tests.")
+    endif()
 endif()
 
 # Python bindings
